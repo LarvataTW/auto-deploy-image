@@ -7,12 +7,16 @@ export HELM_HOST="localhost:44134"
 export AUTO_DEPLOY_ENVIRONMENT_VALUES_FILE=/tmp/auto-deploy-environment-values.yaml
 export RELEASE_NAME=${HELM_RELEASE_NAME:-$CI_ENVIRONMENT_SLUG}
 export POSTGRESQL_RELEASE_NAME="${RELEASE_NAME}-postgresql"
+export MARIADB_RELEASE_NAME="${RELEASE_NAME}-mariadb"
+export REDIS_RELEASE_NAME="${RELEASE_NAME}-redis"
 export AUTO_DEVOPS_POSTGRES_CHANNEL=${AUTO_DEVOPS_POSTGRES_CHANNEL:-"2"}
 if [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "2" ]]; then
   export POSTGRES_VERSION="${POSTGRES_VERSION:-"9.6.16"}"
 elif [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "1" ]]; then
   export POSTGRES_VERSION="${POSTGRES_VERSION:-"9.6.2"}"
 fi
+export MARIA_VERSION="${MARIA_VERSION:-"10.3.16-debian-9-r29"}"
+export REDIS_VERSION="${REDIS_VERSION:-"5.0.5"}"
 export BIN_DIR="/build/bin"
 export ASSETS_DIR='/assets'
 export ASSETS_CHART_DIR="${ASSETS_DIR}/auto-deploy-app"
@@ -147,17 +151,93 @@ function persist_environment_url() {
 
 function auto_database_url() {
   local auto_database_url
-  if [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "2" ]]; then
-    auto_database_url="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRESQL_RELEASE_NAME}:5432/${POSTGRES_DB}"
-  elif [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "1" ]]; then
-    auto_database_url="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${RELEASE_NAME}-postgres:5432/${POSTGRES_DB}"
-  else
-    echo "Un-recognized \$AUTO_DEVOPS_POSTGRES_CHANNEL variable '${AUTO_DEVOPS_POSTGRES_CHANNEL}'. Accepted values are '1' and '2'"
+  if [[ "$POSTGRES_ENABLED" == "true" ]]; then
+    if [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "2" ]]; then
+      auto_database_url="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRESQL_RELEASE_NAME}:5432/${POSTGRES_DB}"
+    elif [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "1" ]]; then
+      auto_database_url="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${RELEASE_NAME}-postgres:5432/${POSTGRES_DB}"
+    else
+      echo "Un-recognized \$AUTO_DEVOPS_POSTGRES_CHANNEL variable '${AUTO_DEVOPS_POSTGRES_CHANNEL}'. Accepted values are '1' and '2'"
 
-    exit 1
+      exit 1
+    fi
+  elif [[ "$MARIA_ENABLED" == "true" ]]; then
+    auto_database_url="mysql2://${MARIA_USER}:${MARIA_PASSWORD}@${MARIADB_RELEASE_NAME}:3306/${MARIA_DB}"
   fi
 
   echo "${DATABASE_URL-$auto_database_url}"
+}
+
+function auto_database_host() {
+  local auto_database_host
+  if [[ "$POSTGRES_ENABLED" == "true" ]]; then
+    if [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "2" ]]; then
+      auto_database_host="${POSTGRESQL_RELEASE_NAME}"
+    elif [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "1" ]]; then
+      auto_database_host="${RELEASE_NAME}-postgres"
+    else
+      echo "Un-recognized \$AUTO_DEVOPS_POSTGRES_CHANNEL variable '${AUTO_DEVOPS_POSTGRES_CHANNEL}'. Accepted values are '1' and '2'"
+
+      exit 1
+    fi
+  elif [[ "$MARIA_ENABLED" == "true" ]]; then
+    auto_database_host="${MARIADB_RELEASE_NAME}"
+  fi
+
+  echo "${DATABASE_HOST-$auto_database_host}"
+}
+
+function auto_database_port() {
+  local auto_database_port
+  if [[ "$POSTGRES_ENABLED" == "true" ]]; then
+    auto_database_port="5432"
+  elif [[ "$MARIA_ENABLED" == "true" ]]; then
+    auto_database_port="3306"
+  fi
+
+  echo "${DATABASE_PORT-$auto_database_port}"
+}
+
+function auto_database_user() {
+  local auto_database_user
+  if [[ "$POSTGRES_ENABLED" == "true" ]]; then
+    auto_database_user="${POSTGRES_USER}"
+  elif [[ "$MARIA_ENABLED" == "true" ]]; then
+    auto_database_user="${MARIA_USER}"
+  fi
+
+  echo "${DATABASE_USER-$auto_database_user}"
+}
+
+function auto_database_password() {
+  local auto_database_password
+  if [[ "$POSTGRES_ENABLED" == "true" ]]; then
+    auto_database_password="${POSTGRES_PASSWORD}"
+  elif [[ "$MARIA_ENABLED" == "true" ]]; then
+    auto_database_password="${MARIA_PASSWORD}"
+  fi
+
+  echo "${DATABASE_PASSWORD-$auto_database_password}"
+}
+
+function auto_database_name() {
+  local auto_database_name
+  if [[ "$POSTGRES_ENABLED" == "true" ]]; then
+    auto_database_name="${POSTGRES_DB}"
+  elif [[ "$MARIA_ENABLED" == "true" ]]; then
+    auto_database_name="${MARIA_DB}"
+  fi
+
+  echo "${DATABASE_NAME-$auto_database_name}"
+}
+
+function auto_redis_url() {
+  local auto_redis_url
+  if [[ "$REDIS_ENABLED" == "true" ]]; then
+    auto_redis_url="redis://${REDIS_RELEASE_NAME}-master:6379"
+  fi
+
+  echo "${REDIS_URL-$auto_redis_url}"
 }
 
 function install_postgresql() {
@@ -193,6 +273,53 @@ function install_postgresql() {
     --namespace="$KUBE_NAMESPACE" \
     "$name" \
     bitnami/postgresql
+}
+
+function install_mariadb() {
+  local name="$MARIA_RELEASE_NAME"
+
+  local debug_flag=()
+  if [[ -n "$AUTO_DEVOPS_DEPLOY_DEBUG" ]]; then
+    debug_flag=('--debug')
+  fi
+
+  helm upgrade --install \
+    --atomic \
+    "${debug_flag[@]}" \
+    --wait \
+    --version 6.6.0 \
+    --set fullnameOverride="$name" \
+    --set db.user="$MARIA_USER" \
+    --set db.password="$MARIA_PASSWORD" \
+    --set db.name="$MARIA_DB" \
+    --set rootUser.password="$MARIA_PASSWORD" \
+    --set image.tag="$MARIA_VERSION" \
+    --set replication.enabled=false \
+    --namespace="$KUBE_NAMESPACE" \
+    "$name" \
+    stable/mariadb
+}
+
+function install_redis() {
+  local name="$REDIS_RELEASE_NAME"
+
+  local debug_flag=()
+  if [[ -n "$AUTO_DEVOPS_DEPLOY_DEBUG" ]]; then
+    debug_flag=('--debug')
+  fi
+
+  helm upgrade --install \
+    --atomic \
+    "${debug_flag[@]}" \
+    --wait \
+    --version 9.1.9 \
+    --set fullnameOverride="$name" \
+    --set usePassword=false \
+    --set cluster.enabled=false \
+    --set image.tag="$REDIS_VERSION" \
+    --namespace="$KUBE_NAMESPACE" \
+    "$name" \
+    stable/redis
 }
 
 # shellcheck disable=SC2153 # warns that my_var vs MY_VAR is a possible misspelling
@@ -247,10 +374,30 @@ channel 1 database.'
     old_postgres_enabled="$POSTGRES_ENABLED"
   fi
 
+  if [[ "$MARIA_ENABLED" == "true" ]]; then
+    install_mariadb
+  fi
+
+  if [[ "$REDIS_ENABLED" == "true" ]]; then
+    install_redis
+  fi
+
   ${BIN_DIR}/validate-chart-version "$(helm list --output json)" "chart" "$name"
 
   local database_url
   database_url=$(auto_database_url)
+  local database_host
+  database_host=$(auto_database_host)
+  local database_port
+  database_port=$(auto_database_port)
+  local database_user
+  database_user=$(auto_database_user)
+  local database_password
+  database_password=$(auto_database_password)
+  local database_name
+  database_name=$(auto_database_name)
+  local redis_url
+  redis_url=$(auto_redis_url)
 
   local image_repository
   local image_tag
@@ -340,6 +487,12 @@ channel 1 database.'
       --set image.secrets[0].name="$secret_name" \
       --set application.track="stable" \
       --set application.database_url="$database_url" \
+      --set application.database_host="$database_host" \
+      --set application.database_port="$database_port" \
+      --set application.database_user="$database_user" \
+      --set application.database_password="$database_password" \
+      --set application.database_name="$database_name" \
+      --set application.redis_url="$redis_url" \
       --set application.secretName="$APPLICATION_SECRET_NAME" \
       --set application.secretChecksum="$APPLICATION_SECRET_CHECKSUM" \
       --set service.commonName="le-$CI_PROJECT_ID.$KUBE_INGRESS_BASE_DOMAIN" \
@@ -380,6 +533,12 @@ channel 1 database.'
     --set image.secrets[0].name="$secret_name" \
     --set application.track="$track" \
     --set application.database_url="$database_url" \
+    --set application.database_host="$database_host" \
+    --set application.database_port="$database_port" \
+    --set application.database_user="$database_user" \
+    --set application.database_password="$database_password" \
+    --set application.database_name="$database_name" \
+    --set application.redis_url="$redis_url" \
     --set application.secretName="$APPLICATION_SECRET_NAME" \
     --set application.secretChecksum="$APPLICATION_SECRET_CHECKSUM" \
     --set service.commonName="le-$CI_PROJECT_ID.$KUBE_INGRESS_BASE_DOMAIN" \
@@ -445,6 +604,24 @@ function delete_postgresql() {
   fi
 }
 
+function delete_mariadb() {
+  local name="$MARIADB_RELEASE_NAME"
+
+  if [[ -n "$(helm ls -q "^$name$")" ]]; then
+    helm delete --purge "$name"
+    kubectl delete pvc -n "$KUBE_NAMESPACE" -l "release=$MARIADB_RELEASE_NAME"
+  fi
+}
+
+function delete_redis() {
+  local name="$REDIS_RELEASE_NAME"
+
+  if [[ -n "$(helm ls -q "^$name$")" ]]; then
+    helm delete --purge "$name"
+    kubectl delete pvc -n "$KUBE_NAMESPACE" -l "release=$REDIS_RELEASE_NAME"
+  fi
+}
+
 # This deletes the PVC for the database if the track is stable
 function delete() {
   local track="${1-stable}"
@@ -457,6 +634,8 @@ function delete() {
 
   if [[ "$track" == "stable" ]]; then
     delete_postgresql
+    delete_mariadb
+    delete_redis
   fi
 
   local secret_name

@@ -32,6 +32,7 @@ If you have any questions, please ask in <https://gitlab.com/gitlab-org/charts/a
 | application.initializeCommand | If present, this variable will run as shell command within an application Container as a Helm post-install Hook. Intended to run database initialization commands. When set, the Deployment resource will be skipped.| `nil` |
 | application.secretName        | Pass in the name of a Secret which the deployment will [load all key-value pairs from the Secret as environment variables](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables) in the application container. | `nil` |
 | application.secretChecksum    | Pass in the checksum of the secrets referenced by `application.secretName`. | `nil` |
+| application.fsGroup           |             | `nil`                              |
 | hpa.enabled                   | If true, enables horizontal pod autoscaler. A resource request is also required to be set, such as `resources.requests.cpu: 200m`.| `false` |
 | hpa.minReplicas               |             | `1`                                |
 | hpa.maxReplicas               |             | `5`                                |
@@ -68,7 +69,7 @@ If you have any questions, please ask in <https://gitlab.com/gitlab-org/charts/a
 | readinessProbe.timeoutSeconds | # of seconds after which the readiness probe times out. | `3`                                |
 | readinessProbe.probeType     | Type of [readiness probe](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes) to use. | `httpGet`
 | readinessProbe.command       | Commands for use with probe type 'exec'. | `{}`
-| postgresql.enabled            |             | `true`                             |
+| postgresql.enabled            |             | `false`                             |
 | postgresql.managed            | If true, this will provision a managed Postgres instance via crossplane.            | `false`                             |
 | postgresql.managedClassSelector            | This will allow provisioning a Postgres instance based on label selectors via Crossplane, eg: `managedClassSelector.matchLabels.stack: gitlab`. The `postgresql.managed` value should be true as well for this to be honoured. [Crossplane Configuration](https://docs.gitlab.com/ee/user/clusters/applications.html#crossplane)            | `{}`                             |
 | podDisruptionBudget.enabled   |             | `false`                            |
@@ -77,6 +78,12 @@ If you have any questions, please ask in <https://gitlab.com/gitlab-org/charts/a
 | prometheus.metrics            | Annotates the service for prometheus auto-discovery. Also denies access to the `/metrics` endpoint from external addresses with Ingress. | `false` |
 | networkPolicy.enabled         | Enable container network policy | `false` |
 | networkPolicy.spec            | [Network policy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) definition | `{ podSelector: { matchLabels: {} }, ingress: [{ from: [{ podSelector: { matchLabels: {} } }, { namespaceSelector: { matchLabels: { app.gitlab.com/managed_by: gitlab } } }] }] }` |
+| persistence.enabled           | Flag for enabling persistent storage      | false                                    |
+| persistence.annotations       | Kubernetes pvc annotations                | `{}`                                     |
+| persistence.existingClaim     | Do not create a new PVC but use this one  | None                                     |
+| persistence.storageClass      | Storage class to be used                  | "-"                                      |
+| persistence.accessMode        | Volumes access mode to be set             | `ReadWriteOnce`                          |
+| persistence.size              | Size of the volume                        | None                                     |
 
 ## PostgreSQL
 

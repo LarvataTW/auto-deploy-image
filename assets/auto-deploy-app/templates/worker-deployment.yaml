@@ -61,7 +61,21 @@ items:
           {{- end }}
           env:
           - name: DATABASE_URL
-            value: {{ $.Values.application.database_url | quote }}
+            value: {{ .Values.application.database_url | quote }}
+          - name: DATABASE_HOST
+            value: {{ .Values.application.database_host | quote }}
+          - name: DATABASE_PORT
+            value: {{ .Values.application.database_port | quote }}
+          - name: DATABASE_USER
+            value: {{ .Values.application.database_user | quote }}
+          - name: DATABASE_PASSWORD
+            value: {{ .Values.application.database_password | quote }}
+          - name: DATABASE_NAME
+            value: {{ .Values.application.database_name | quote }}
+{{- if .Values.redis.enabled }}
+          - name: REDIS_URL
+            value: {{ .Values.application.redis_url | quote }}
+{{- end }}
           - name: GITLAB_ENVIRONMENT_NAME
             value: {{ $.Values.gitlab.envName | quote }}
 {{- with $livenessProbeConfig := default $.Values.livenessProbe $workerConfig.livenessProbe -}}

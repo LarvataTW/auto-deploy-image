@@ -19,6 +19,7 @@ application:
   initializeCommand:
   secretName:
   secretChecksum:
+  fsGroup:
 hpa:
   enabled: false
   minReplicas: 1
@@ -69,7 +70,7 @@ readinessProbe:
   scheme: "HTTP"
   probeType: "httpGet"
 postgresql:
-  enabled: true
+  enabled: false
   managed: false
   managedClassSelector:
     #   matchLabels:
@@ -133,3 +134,26 @@ workers: {}
   #   - procfile
   #   - start
   #   - stop_worker
+
+persistence:
+  enabled: false
+  ## Set annotations on pvc
+  annotations: {}
+
+  volumeMounts:
+  - mountPath: /your/mount/path
+    subPath: subPath
+
+  ## Specify an existing volume claim instead of creating a new one.
+  ## When using this option all following options like storageClass, accessMode and size are ignored.
+  # existingClaim:
+
+  # If defined, storageClassName: <storageClass>
+  # If set to "-", storageClassName: "", which disables dynamic provisioning
+  # If undefined (the default) or set to null, no storageClassName spec is
+  #   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  #   GKE, AWS & OpenStack)
+  #
+  # storageClass: "-"
+  accessMode: ReadWriteOnce
+  size: 10Gi
