@@ -87,7 +87,7 @@ spec:
           value: {{ .Values.application.database_password | quote }}
         - name: DATABASE_NAME
           value: {{ .Values.application.database_name | quote }}
-{{- if .Values.redis.enabled }}
+{{- if .Values.application.redis_url }}
         - name: REDIS_URL
           value: {{ .Values.application.redis_url | quote }}
 {{- end }}
