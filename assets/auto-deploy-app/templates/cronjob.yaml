@@ -70,9 +70,9 @@ spec:
               value: {{ $.Values.application.database_password | quote }}
             - name: DATABASE_NAME
               value: {{ $.Values.application.database_name | quote }}
-{{- if .Values.application.redis_url }}
+{{- if $.Values.application.redis_url }}
             - name: REDIS_URL
-              value: {{ .Values.application.redis_url | quote }}
+              value: {{ $.Values.application.redis_url | quote }}
 {{- end }}
             - name: GITLAB_ENVIRONMENT_NAME
               value: {{ $.Values.gitlab.envName }}
