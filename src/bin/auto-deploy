@@ -276,7 +276,7 @@ function install_postgresql() {
 }
 
 function install_mariadb() {
-  local name="$MARIA_RELEASE_NAME"
+  local name="$MARIADB_RELEASE_NAME"
 
   local debug_flag=()
   if [[ -n "$AUTO_DEVOPS_DEPLOY_DEBUG" ]]; then

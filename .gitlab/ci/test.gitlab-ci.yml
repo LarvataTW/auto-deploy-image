@@ -85,6 +85,7 @@ test-auto_database_url:
   <<: *test-job
   variables:
     CI_ENVIRONMENT_SLUG: production
+    POSTGRES_ENABLED: "true"
     POSTGRES_USER: user
     POSTGRES_PASSWORD: testing-password
     POSTGRES_DB: $CI_ENVIRONMENT_SLUG
