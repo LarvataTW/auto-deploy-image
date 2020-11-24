@@ -374,11 +374,21 @@ channel 1 database.'
     old_postgres_enabled="$POSTGRES_ENABLED"
   fi
 
+  local old_mariadb_already_enabled
   if [[ "$MARIA_ENABLED" == "true" ]]; then
+    old_mariadb_already_enabled=$( (helm get values --output json "$stable_name" || echo '{}') | jq '.mariadb.enabled')
+    if [[ "$old_mariadb_already_enabled" == "true" ]]; then
+      kubectl delete statefulset -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=mariadb"
+    fi
     install_mariadb
   fi
 
+  local old_redis_already_enabled
   if [[ "$REDIS_ENABLED" == "true" ]]; then
+    old_redis_already_enabled=$( (helm get values --output json "$stable_name" || echo '{}') | jq '.redis.enabled')
+    if [[ "$old_redis_already_enabled" == "true" ]]; then
+      kubectl delete statefulset -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=redis"
+    fi
     install_redis
   fi
 
