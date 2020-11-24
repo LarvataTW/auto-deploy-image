@@ -379,6 +379,7 @@ channel 1 database.'
     old_mariadb_already_enabled=$( (helm get values --output json "$stable_name" || echo '{}') | jq '.mariadb.enabled')
     if [[ "$old_mariadb_already_enabled" == "true" ]]; then
       kubectl delete statefulset -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=mariadb"
+      kubectl delete configmap -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=mariadb"
       kubectl delete secret -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=mariadb"
     fi
     install_mariadb
