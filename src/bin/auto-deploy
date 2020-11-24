@@ -389,6 +389,7 @@ channel 1 database.'
     old_redis_already_enabled=$( (helm get values --output json "$stable_name" || echo '{}') | jq '.redis.enabled')
     if [[ "$old_redis_already_enabled" == "true" ]]; then
       kubectl delete statefulset -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=redis"
+      kubectl delete configmap -n "$KUBE_NAMESPACE" -l "release=$RELEASE_NAME,app=redis"
     fi
     install_redis
   fi
