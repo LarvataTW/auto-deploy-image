@@ -15,7 +15,7 @@ if [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "2" ]]; then
 elif [[ "$AUTO_DEVOPS_POSTGRES_CHANNEL" == "1" ]]; then
   export POSTGRES_VERSION="${POSTGRES_VERSION:-"9.6.2"}"
 fi
-export MARIA_VERSION="${MARIA_VERSION:-"10.3.22-debian-10-r27"}"
+export MARIA_VERSION="${MARIA_VERSION:-"10.3.16-debian-9-r29"}"
 export REDIS_VERSION="${REDIS_VERSION:-"5.0.5"}"
 export BIN_DIR="/build/bin"
 export ASSETS_DIR='/assets'
