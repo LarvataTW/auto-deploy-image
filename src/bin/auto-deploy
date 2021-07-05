@@ -312,7 +312,7 @@ function install_redis() {
     --atomic \
     "${debug_flag[@]}" \
     --wait \
-    --version 9.1.9 \
+    --version 10.5.7 \
     --set fullnameOverride="$name" \
     --set usePassword=false \
     --set cluster.enabled=false \
