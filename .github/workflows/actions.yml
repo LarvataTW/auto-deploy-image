@@ -50,6 +50,12 @@ jobs:
           push: true
           context: .
           platforms: linux/amd64
+          build-args: |
+            DOCKER_DRIVER=${{ env.DOCKER_DRIVER }}
+            ALPINE_VERSION=${{ env.ALPINE_VERSION }}
+            GLIBC_VERSION=${{ env.GLIBC_VERSION }}
+            HELM_VERSION=${{ env.HELM_VERSION }}
+            KUBERNETES_VERSION=${{ env.KUBERNETES_VERSION }}
           tags: |
             ${{ env.DOCKERHUB_OWNER }}/${{ env.IMAGE_NAME }}:latest
             ghcr.io/${{ env.GITHUB_OWNER }}/${{ env.IMAGE_NAME }}:latest
