@@ -9,6 +9,11 @@ env:
   IMAGE_NAME: auto-deploy-image
   GITHUB_OWNER: larvatatw
   DOCKERHUB_OWNER: larvata
+  DOCKER_DRIVER: overlay2
+  ALPINE_VERSION: 3.12
+  GLIBC_VERSION: 2.31-r0
+  HELM_VERSION: 2.17.0
+  KUBERNETES_VERSION: 1.15.12
 
 jobs:
 
