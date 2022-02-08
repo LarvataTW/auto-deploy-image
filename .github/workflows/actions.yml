@@ -3,7 +3,7 @@ name: Build And Release Docker Images
 on:
   push:
     branches:
-      - 'master'
+      - 'mariadb'
 
 env:
   IMAGE_NAME: auto-deploy-image
